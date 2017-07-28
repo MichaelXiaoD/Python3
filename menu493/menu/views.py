@@ -1,22 +1,15 @@
 # coding=utf-8
 
-from django.shortcuts import get_object_or_404, render
-from django.http import HttpResponseRedirect
-from django.urls import reverse
-from django.views import generic
-from django.utils import timezone
+from django.http import HttpResponse, HttpRequest, JsonResponse
+from .utils import date_deprocess, time_deprocess
 
 from .models import Menu
-from . import utils
 
 
-class MenuListView(generic.ListView):
-    model = Menu
-    page_kwarg = 'supply_date'
-    context_object_name = 'menu_list'
-    template_name = 'menu_index.html'
-
-    def get_queryset(self):
-        meal = Menu.objects.get(supplyDate__month=7)
-        dishs = meal.dishs.all()
-        return meal, dishs
+def menulist_page(request):
+    supply_date = request.GET.get('supply_date')
+    time = request.GET.get('time')
+    meal = Menu.objects.get(supplyDate=date_deprocess(supply_date), supplyTime=time_deprocess(time))
+    dishs = meal.dishs.all()
+    response = HttpResponse([meal, dishs])
+    return response

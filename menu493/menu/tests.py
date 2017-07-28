@@ -3,9 +3,10 @@
 from django.test import TestCase
 from django.urls import reverse
 from datetime import date, time
-
+from urllib import parse
 from .models import Menu, Dish
 from . import utils
+
 
 # Create your tests here.
 class MenuRequestTests(TestCase):
@@ -14,32 +15,30 @@ class MenuRequestTests(TestCase):
         timeMorning = time(10)
 
         # 新建dish
-        str1 = '手撕兔'.encode('UTF-8')
-        str2 = '烤鱼'.encode('UTF-8')
+        str1 = '手撕兔'
+        str2 = '烤鱼'
         Dish.objects.create(name=str1, type='Meat', price=1.0)
         Dish.objects.create(name=str2, type='Meat', price=1.0)
         menu = Menu.objects.create(supplyDate=supplyDate, supplyTime='lunch')
 
         dishs = Dish.objects.all()
-        print(dishs)
 
         menu.dishs.add(*dishs)
-
-        menu_get = Menu.objects.get(supplyDate=supplyDate, supplyTime='lunch')
-        print(menu_get.dishs)
 
         # 生成请求体：日期时间处理
         dateString = utils.date_process(supplyDate)
         timeString = utils.time_process(timeMorning)
 
         # 请求url:/menu_list，参数为supply_date和time: The test client is a Python class that acts as a dummy Web browser
-        url = reverse('menu:menu_list', kwargs={'supply_date': dateString, 'time': timeString})
-        self.assertEqual(url, '/menu/menulist/supply_date={}&time={}/'.format(dateString, timeString))
+        url = reverse('menu:menu_list')
+        self.assertEqual(url, '/menu/menulist/')
 
-        response = self.client.get(url)
+        response = self.client.get(url, {'supply_date': dateString, 'time': timeString})
+        # print(response.content.decode(''))
+
         self.assertEqual(response.status_code, 200)
-        self.assertQuerysetEqual(response.context['menu_list'],
-                                 ['<Menu: {0} lunch>'.format(supplyDate), '<QuerySet [<Dish: 手撕兔>, <Dish: 烤鱼>]>'])
+        self.assertEqual(response.content.decode(),
+                         '{0} lunch<QuerySet [<Dish: 手撕兔>, <Dish: 烤鱼>]>'.format(supplyDate))
 
 
 class UtilsTest(TestCase):
