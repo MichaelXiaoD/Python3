@@ -1,0 +1,41 @@
+from datetime import date, time
+from django.urls import reverse
+from django.test import TestCase
+
+from ..utils import date_process, time_process
+from ..models import Menu, Dish
+
+
+# 用户肖盾在上午10点，他登陆了微信小程序，小程序首先提交了用户验证，
+
+# 小程序发现肖盾是新用户
+class NewVisitorView(TestCase):
+    def setUp(self):
+        timeMorning = time(10)
+        self.dateString = date_process(date.today())
+        self.timeString = time_process(timeMorning)
+
+        Dish.objects.create(name='手撕兔', type='Meat', price=1.0)
+        Dish.objects.create(name='烤鱼', type='Meat', price=1.0)
+        menu = Menu.objects.create(supplyDate=date.today(), supplyTime='lunch')
+        dishs = Dish.objects.all()
+        menu.dishs.add(*dishs)
+
+    def test_can_get_the_correct_menu_list(self):
+        # 因此小程序显示主页时只是单纯地请求当天的菜单信息
+        url = reverse('menu:menu_list')
+        self.assertEqual(url, '/menu/menulist/')
+        response = self.client.get(url, {'supply_date': self.dateString, 'time': self.timeString})
+        # print(response.content.decode(''))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content.decode(),
+                         '{0} lunch<QuerySet [<Dish: 手撕兔>, <Dish: 烤鱼>]>'.format(self.dateString))
+        # 肖盾看了下时间，现在是上午10点，显示的是中餐内容
+        # 他注意到菜单中有荤菜，素菜和套餐，数量分别为11，2，6。
+        # 他还注意到每道菜都有菜名价格，菜名不重复
+        # 他想看的其实是第二天的内容，因此他选择了看第二天中餐的菜单
+
+# 他开始点餐，系统提示他需要先注册
+# 他跳转到注册页面开始注册
+# 注册完他开始点餐，提交了自己的需求
