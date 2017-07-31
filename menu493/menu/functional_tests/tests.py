@@ -1,10 +1,12 @@
+# coding=utf-8
+
 from datetime import date, time
 from django.urls import reverse
 from django.test import TestCase
 
 from ..utils import date_process, time_process
 from ..models import Menu, Dish
-
+from json import JSONDecoder
 
 # 用户肖盾在上午10点，他登陆了微信小程序，小程序首先提交了用户验证，
 
@@ -20,19 +22,25 @@ class NewVisitorView(TestCase):
         menu = Menu.objects.create(supplyDate=date.today(), supplyTime='lunch')
         dishs = Dish.objects.all()
         menu.dishs.add(*dishs)
-
-    def test_can_get_the_correct_menu_list(self):
-        # 因此小程序显示主页时只是单纯地请求当天的菜单信息
         url = reverse('menu:menu_list')
-        self.assertEqual(url, '/menu/menulist/')
-        response = self.client.get(url, {'supply_date': self.dateString, 'time': self.timeString})
-        # print(response.content.decode(''))
+        self.response = self.client.get(url, {'supply_date': self.dateString, 'time': self.timeString})
 
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.content.decode(),
-                         '{0} lunch<QuerySet [<Dish: 手撕兔>, <Dish: 烤鱼>]>'.format(self.dateString))
-        # 肖盾看了下时间，现在是上午10点，显示的是中餐内容
-        # 他注意到菜单中有荤菜，素菜和套餐，数量分别为11，2，6。
+    # 因此小程序显示主页时只是单纯地请求当天的菜单信息
+    def test_can_get_the_correct_menu_list(self):
+        # 小程序的请求得到了正常响应
+        self.assertEqual(self.response.status_code, 200)
+        self.assertIn('application/json', str(self.response))
+        # 肖盾看了下时间，现在是上午10点，显示的是中餐内容，日期是今天的日期
+        result = self.response.json()
+        print(result)
+        self.assertEqual(self.dateString, result['menu_supply_date'])
+        self.assertEqual(result['menu_time'], 'lunch')
+
+    def test_context_of_menu_list_correct(self):
+        result = self.response.json()
+        self.assertIn('手撕兔', str(result))
+        # 他注意到菜单中有荤菜，素菜和套餐，数量分别为11，2，6，总数19。
+        self.assertEqual(len(result['menu_dishs']), 19)
         # 他还注意到每道菜都有菜名价格，菜名不重复
         # 他想看的其实是第二天的内容，因此他选择了看第二天中餐的菜单
 

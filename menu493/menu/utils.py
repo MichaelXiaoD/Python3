@@ -1,7 +1,5 @@
 # coding=utf-8
-
 from datetime import date, time
-
 
 def date_process(dateObject):
     year = dateObject.year

@@ -7,7 +7,7 @@ from .. import utils
 
 # Create your tests here.
 
-class UtilsTest(TestCase):
+class DateAndTimeProcessTest(TestCase):
     def test_date_process(self):
         dateTest = date(2017, 3, 6)
         result = utils.date_process(dateTest)
@@ -24,3 +24,12 @@ class UtilsTest(TestCase):
     def test_time_deprocess(self):
         timeString = '11'
         self.assertEqual(utils.time_deprocess(timeString), 'lunch')
+
+class ModelsTest(TestCase):
+    def test_has_models(self):
+        pass
+
+    def test_menu_has_the_right_number_dishs(self):
+        pass
+
+
